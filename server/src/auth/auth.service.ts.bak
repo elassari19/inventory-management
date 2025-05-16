@@ -2,13 +2,8 @@ import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
-import { JwtPayload, AuthenticatedUser } from './auth.types';
-import {
-  JWT_SECRET,
-  JWT_EXPIRATION_TIME,
-  DEVICE_JWT_SECRET,
-  DEVICE_JWT_EXPIRATION_TIME,
-} from './auth.constants';
+import { JwtPayload } from './auth.types';
+import { JWT_SECRET, JWT_EXPIRATION_TIME, DEVICE_JWT_SECRET, DEVICE_JWT_EXPIRATION_TIME } from './auth.constants';
 import { UserRegistrationSchema } from './auth.schema';
 
 // Define User interface for TypeScript
@@ -23,6 +18,7 @@ interface User {
 // Create a connection pool to PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  // Additional connection options if needed
 });
 
 export class AuthService {
@@ -30,40 +26,38 @@ export class AuthService {
     try {
       // Validate input data using Zod schema
       const validData = UserRegistrationSchema.parse(userData);
-
+      
       // Check if user already exists
       const existingUserResult = await pool.query(
         'SELECT * FROM users WHERE email = $1',
         [validData.email]
       );
-
+      
       if (existingUserResult.rows.length > 0) {
         throw new Error('User already exists');
       }
-
+      
       // Hash password
       const hashedPassword = await bcrypt.hash(validData.password, 10);
-
+      
       // Generate a UUID for the user
       const userId = uuidv4();
-
+      
       // Insert user into database
       const result = await pool.query(
-        'INSERT INTO users (id, email, password, name, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id, email, name, created_at',
+        `INSERT INTO users (id, email, password, name, created_at) 
+         VALUES ($1, $2, $3, $4, NOW()) 
+         RETURNING id, email, name, created_at`,
         [userId, validData.email, hashedPassword, validData.name || '']
       );
-
+      
       // Create a basic subscription for the user (assumes a subscription table exists)
       await pool.query(
-        'INSERT INTO subscriptions (user_id, plan, status, end_date) VALUES ($1, $2, $3, $4)',
-        [
-          userId,
-          'Basic',
-          'active',
-          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        ]
+        `INSERT INTO subscriptions (user_id, plan, status, end_date) 
+         VALUES ($1, $2, $3, $4)`,
+        [userId, 'Basic', 'active', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)]
       );
-
+      
       return result.rows[0];
     } catch (error) {
       if (error instanceof Error) {
@@ -72,132 +66,136 @@ export class AuthService {
       throw new Error('Invalid input data');
     }
   }
-
+  
   static async validateUser(email: string, password: string) {
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [
-      email,
-    ]);
-
+    const result = await pool.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
+    
     const user = result.rows[0];
-
+    
     if (!user) {
       return null;
     }
-
+    
     const isValidPassword = await bcrypt.compare(password, user.password);
-
+    
     if (!isValidPassword) {
       return null;
     }
-
+    
     // Exclude password from returned user object
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
-
+  
   static async getUserById(id: string) {
     const userResult = await pool.query(
       'SELECT id, email, name, created_at FROM users WHERE id = $1',
       [id]
     );
-
+    
     const user = userResult.rows[0];
-
+    
     if (!user) {
       return null;
     }
-
+    
     // Get user subscription
     const subscriptionResult = await pool.query(
       'SELECT * FROM subscriptions WHERE user_id = $1',
       [id]
     );
-
+    
     const subscription = subscriptionResult.rows[0];
-
+    
     return {
       ...user,
-      subscription: subscription || null,
+      subscription: subscription || null
     };
   }
-
+  
   static async generateToken(user: any, tenantId?: string): Promise<string> {
     const payload: JwtPayload = {
       userId: user.id,
-      tenantId,
+      tenantId
     };
-
+    
     return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION_TIME });
   }
-
-  static async generateDeviceToken(
-    deviceId: string,
-    tenantId: string
-  ): Promise<string> {
+  
+  static async generateDeviceToken(deviceId: string, tenantId: string): Promise<string> {
     const payload: JwtPayload = {
-      userId: deviceId,
-      tenantId,
+      deviceId,
+      tenantId
     };
-
-    return jwt.sign(payload, DEVICE_JWT_SECRET, {
-      expiresIn: DEVICE_JWT_EXPIRATION_TIME,
-    });
+    
+    return jwt.sign(payload, DEVICE_JWT_SECRET, { expiresIn: DEVICE_JWT_EXPIRATION_TIME });
   }
-
+  
   // --- Multi-tenant specific methods ---
-
+  
   static async registerDevice(name: string, tenantId: string): Promise<any> {
     const deviceId = uuidv4();
-
+    
     const result = await pool.query(
-      'INSERT INTO devices (id, name, tenant_id, created_at) VALUES ($1, $2, $3, NOW()) RETURNING id, name, tenant_id',
+      `INSERT INTO devices (id, name, tenant_id, created_at) 
+       VALUES ($1, $2, $3, NOW()) 
+       RETURNING id, name, tenant_id`,
       [deviceId, name, tenantId]
     );
-
+    
     const device = result.rows[0];
-
+    
     // Generate a token for this device
     const token = await this.generateDeviceToken(deviceId, tenantId);
-
+    
     return {
       ...device,
-      token,
+      token
     };
   }
-
+  
   static async getUserTenants(userId: string): Promise<any[]> {
     const result = await pool.query(
-      'SELECT t.id, t.name, tu.roles FROM tenants t JOIN tenant_users tu ON t.id = tu.tenant_id WHERE tu.user_id = $1',
+      `SELECT t.id, t.name, tu.roles
+       FROM tenants t
+       JOIN tenant_users tu ON t.id = tu.tenant_id
+       WHERE tu.user_id = $1`,
       [userId]
     );
-
+    
     return result.rows;
   }
-
+  
   static async createTenant(name: string, ownerId: string): Promise<any> {
     // Start a transaction
     const client = await pool.connect();
-
+    
     try {
       await client.query('BEGIN');
-
+      
       // Create the tenant
       const tenantId = uuidv4();
       const tenantResult = await client.query(
-        'INSERT INTO tenants (id, name, created_at) VALUES ($1, $2, NOW()) RETURNING id, name, created_at',
+        `INSERT INTO tenants (id, name, created_at) 
+         VALUES ($1, $2, NOW()) 
+         RETURNING id, name, created_at`,
         [tenantId, name]
       );
-
+      
       const tenant = tenantResult.rows[0];
-
+      
       // Associate the owner with the tenant and give them admin role
       await client.query(
-        'INSERT INTO tenant_users (tenant_id, user_id, roles) VALUES ($1, $2, $3)',
+        `INSERT INTO tenant_users (tenant_id, user_id, roles) 
+         VALUES ($1, $2, $3)`,
         [tenantId, ownerId, ['admin']]
       );
-
+      
       await client.query('COMMIT');
-
+      
       return tenant;
     } catch (error) {
       await client.query('ROLLBACK');
@@ -206,49 +204,49 @@ export class AuthService {
       client.release();
     }
   }
-
+  
   static async getTenantUsers(tenantId: string): Promise<any[]> {
     const result = await pool.query(
-      'SELECT u.id, u.email, u.name, tu.roles FROM users u JOIN tenant_users tu ON u.id = tu.user_id WHERE tu.tenant_id = $1',
+      `SELECT u.id, u.email, u.name, tu.roles
+       FROM users u
+       JOIN tenant_users tu ON u.id = tu.user_id
+       WHERE tu.tenant_id = $1`,
       [tenantId]
     );
-
+    
     return result.rows;
   }
-
-  static async addUserToTenant(
-    email: string,
-    tenantId: string,
-    roles: string[] = ['user']
-  ): Promise<any> {
+  
+  static async addUserToTenant(email: string, tenantId: string, roles: string[] = ['user']): Promise<any> {
     // First, find the user by email
     const userResult = await pool.query(
       'SELECT id FROM users WHERE email = $1',
       [email]
     );
-
+    
     const user = userResult.rows[0];
-
+    
     if (!user) {
       throw new Error('User not found');
     }
-
+    
     // Check if the user is already in the tenant
     const existingResult = await pool.query(
       'SELECT * FROM tenant_users WHERE tenant_id = $1 AND user_id = $2',
       [tenantId, user.id]
     );
-
+    
     if (existingResult.rows.length > 0) {
       throw new Error('User is already a member of this tenant');
     }
-
+    
     // Add the user to the tenant
     await pool.query(
-      'INSERT INTO tenant_users (tenant_id, user_id, roles) VALUES ($1, $2, $3)',
+      `INSERT INTO tenant_users (tenant_id, user_id, roles) 
+       VALUES ($1, $2, $3)`,
       [tenantId, user.id, roles]
     );
-
+    
     return { success: true };
   }
 }

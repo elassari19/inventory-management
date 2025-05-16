@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 import { AuthService } from './auth.service';
-import { User } from '@prisma/client';
 
 export class AuthController {
   static async register(req: Request, res: Response, next: NextFunction) {
