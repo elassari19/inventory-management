@@ -1,0 +1,39 @@
+{
+  "common": {
+    "welcome": "Bienvenido a Ventory",
+    "explore": "Explorar",
+    "home": "Inicio",
+    "settings": "Configuración",
+    "profile": "Perfil",
+    "search": "Buscar",
+    "loading": "Cargando...",
+    "error": "Ha ocurrido un error",
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Añadir",
+    "language": "Idioma",
+    "back": "Atrás"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "register": "Registrarse",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "createAccount": "Crear cuenta",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?"
+  },
+  "inventory": {
+    "title": "Inventario",
+    "items": "Artículos",
+    "addItem": "Añadir artículo",
+    "editItem": "Editar artículo",
+    "deleteItem": "Eliminar artículo",
+    "noItems": "No se encontraron artículos",
+    "search": "Buscar en inventario"
+  }
+}

@@ -1,5 +1,11 @@
 {
   "expo": {
+    "locales": {
+      "en": "./localization/translations/en.json",
+      "fr": "./localization/translations/fr.json",
+      "es": "./localization/translations/es.json",
+      "ar": "./localization/translations/ar.json"
+    },
     "name": "client",
     "slug": "client",
     "version": "1.0.0",
@@ -23,6 +29,9 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+    "extra": {
+      "supportsRTL": true
+    },
     "plugins": [
       "expo-router",
       [
@@ -33,7 +42,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true
