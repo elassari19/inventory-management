@@ -26,7 +26,7 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
+      "output": "server",
       "favicon": "./assets/images/favicon.png"
     },
     "extra": {
@@ -43,7 +43,8 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      { "origin": "http://localhost:8081/" }
     ],
     "experiments": {
       "typedRoutes": true

@@ -19,6 +19,13 @@ import { createApolloServer } from './graphql/server';
 import { redisSession } from './utils/redis.config';
 import { redisClient } from './lib/redis';
 
+// Import tenant middleware
+import { extractTenant, requireTenant } from './middleware/tenant.middleware';
+import {
+  secureTenantExtractor,
+  tenantRateLimiter,
+} from './middleware/secure-tenant.middleware';
+
 export const createApp = async () => {
   /* CONFIGURATIONS */
   const app = express();
@@ -68,8 +75,17 @@ export const createApp = async () => {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Apply secure tenant middleware to all requests
+  app.use(secureTenantExtractor);
+
+  // Apply rate limiting based on tenant tier
+  app.use(tenantRateLimiter);
+
   // Routes
   app.use('/auth', authRouter);
+
+  // Protect API routes with tenant validation
+  app.use('/api', requireTenant);
 
   // Initialize Apollo Server - await it properly
   // await createApolloServer(app);
