@@ -23,6 +23,13 @@ export class TenantRedisService {
   }
 
   /**
+   * Get the tenant ID for this service
+   */
+  getTenantId(): string {
+    return this.tenantId;
+  }
+
+  /**
    * Get a value from Redis cache with tenant isolation
    */
   async get(key: string): Promise<string | null> {
@@ -81,6 +88,20 @@ export class TenantRedisService {
       return redisClient.del(...keys);
     }
     return 0;
+  }
+
+  /**
+   * Find keys matching a pattern with tenant isolation
+   */
+  async keys(pattern: string): Promise<string[]> {
+    return redisClient.keys(this.prefixKey(pattern));
+  }
+
+  /**
+   * Set expiration time on a key with tenant isolation
+   */
+  async expire(key: string, seconds: number): Promise<number> {
+    return redisClient.expire(this.prefixKey(key), seconds);
   }
 
   /**
