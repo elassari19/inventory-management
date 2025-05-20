@@ -3,7 +3,7 @@
  * Provides inventory operations with tenant isolation
  */
 
-import { createTenantContext } from '../db/tenant-context';
+import { createTenantContext } from '../tenant/tenant-context';
 import { TenantRequest } from '../middleware/tenant.middleware';
 
 /**
