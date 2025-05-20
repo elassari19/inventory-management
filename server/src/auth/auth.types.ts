@@ -3,20 +3,94 @@ export interface JwtPayload {
   tenantId?: string;
   deviceId?: string;
   roles?: string[];
+  permissions?: string[];
   exp?: number;
   iat?: number;
+  type?: string; // 'access' or 'refresh'
 }
 
 export interface AuthenticatedUser {
   id: string;
-  email: string; // Or username, depending on your setup
+  email: string;
+  firstName?: string;
+  lastName?: string;
   currentTenantId?: string;
+  roles?: string[];
+  permissions?: string[];
 }
 
 export interface AuthenticatedDevice {
   id: string;
+  deviceId: string;
+  userId: string;
+  tenantId?: string;
+  name?: string;
+  model?: string;
+  platform?: string;
+}
+
+export interface TenantRole {
   tenantId: string;
-  name?: string; // Optional: a friendly name for the device
+  role: string;
+  permissions: string[];
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+  deviceInfo?: DeviceRegistrationData;
+}
+
+export interface DeviceLoginCredentials {
+  email: string;
+  password: string;
+  deviceId: string;
+}
+
+export interface RegisterUserData {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  address?: Record<string, any>;
+  language?: string;
+  tenantId?: string;
+  roles?: string[];
+}
+
+export interface UserWithTenants {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  status: string;
+  tenants: Array<any>;
+  [key: string]: any;
+}
+
+export interface DeviceRegistrationData {
+  deviceId: string;
+  deviceName: string;
+  deviceModel: string;
+  platform: string;
+  osVersion: string;
+  appVersion: string;
+}
+
+export interface PasswordResetRequest {
+  email: string;
+}
+
+export interface PasswordResetData {
+  token: string;
+  newPassword: string;
 }
 
 // Example type for a user object that might be stored in the database
@@ -47,4 +121,41 @@ export interface TenantUser {
   userId: string;
   tenantId: string;
   roles: string[]; // e.g., ['admin', 'scanner']
+}
+
+// Security tracking types
+export interface SuspiciousLoginData {
+  id?: string;
+  userId: string;
+  ipAddress: string;
+  country: string;
+  region: string;
+  city: string;
+  userAgent: string;
+  timestamp: string;
+  riskLevel: 'medium' | 'high';
+  reasons: string[];
+}
+
+export interface SecurityAssessment {
+  isSuspicious: boolean;
+  riskLevel: 'low' | 'medium' | 'high';
+  reasons: string[];
+}
+
+export interface IPBlockData {
+  ipAddress: string;
+  reason: string;
+  blockedAt: string;
+  duration?: number;
+}
+
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
+  // ... other user properties
+}
+
+export interface AuthRequest extends Request {
+  user?: AuthenticatedUser;
 }

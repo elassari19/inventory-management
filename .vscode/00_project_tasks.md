@@ -12,9 +12,9 @@
 
 ### Phase 2: Backend Implementation
 
-- [ ] Develop authentication and authorization system
+- [x] Develop authentication and authorization system
+- [x] Implement multi-tenancy service layer
 - [ ] Build core inventory management APIs
-- [ ] Implement multi-tenancy service layer
 - [ ] Create data migration utilities
 - [ ] Develop external API endpoints with GraphQL
 
