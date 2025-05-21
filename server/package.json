@@ -7,7 +7,11 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
-    "test": "jest"
+    "test": "jest",
+    "migrate": "ts-node scripts/migrate.ts",
+    "migrate:status": "ts-node scripts/migrate.ts status",
+    "migrate:backup": "ts-node scripts/migrate.ts backup",
+    "migrate:restore": "ts-node scripts/migrate.ts restore"
   },
   "dependencies": {
     "@types/puppeteer-core": "^7.0.4",
@@ -17,6 +21,7 @@
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",
     "bullmq": "^5.48.1",
+    "commander": "^14.0.0",
     "connect-redis": "^7.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -40,6 +45,7 @@
     "redis": "^4.7.0",
     "reflect-metadata": "^0.2.2",
     "stripe": "^18.0.0",
+    "ts-node": "^10.9.2",
     "typeorm": "^0.3.22",
     "typescript": "^5.3.2",
     "uuid": "^11.1.0",
