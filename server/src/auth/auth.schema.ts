@@ -3,7 +3,8 @@ import { z } from 'zod';
 export const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
-  name: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
 });
 
 export const loginSchema = z.object({
@@ -14,7 +15,8 @@ export const loginSchema = z.object({
 export const userResponseSchema = z.object({
   id: z.string(),
   email: z.string(),
-  name: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
   createdAt: z.date(),
   subscription: z
     .object({
@@ -31,7 +33,11 @@ export const UserRegistrationSchema = z.object({
   password: z
     .string()
     .min(8, { message: 'Password must be at least 8 characters long' }),
-  name: z
+  firstName: z
+    .string()
+    .min(3, { message: 'Name must be at least 3 characters long' })
+    .max(50, { message: 'Name must be at most 50 characters long' }),
+  lastName: z
     .string()
     .min(3, { message: 'Name must be at least 3 characters long' })
     .max(50, { message: 'Name must be at most 50 characters long' }),

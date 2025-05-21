@@ -1,12 +1,40 @@
 export interface JwtPayload {
-  userId: string;
-  tenantId?: string;
-  deviceId?: string;
-  roles?: string[];
-  permissions?: string[];
+  sub: string; // user ID
+  email: string;
+  tenant_id?: string;
+  device_id?: string;
   exp?: number;
   iat?: number;
   type?: string; // 'access' or 'refresh'
+  roles?: string[];
+  permissions?: string[];
+}
+
+export interface DeviceInfo {
+  deviceId: string;
+  deviceName: string;
+  deviceModel: string;
+  platform: string;
+  osVersion: string;
+  appVersion: string;
+}
+
+export interface SecurityTrackingService {
+  trackRegistration(userId: string): Promise<void>;
+  trackLoginAttempt(
+    userId: string,
+    success: boolean,
+    ip: string
+  ): Promise<void>;
+  trackPasswordReset(userId: string): Promise<void>;
+  trackLogout(userId: string): Promise<void>;
+  trackDeviceRegistration(userId: string, deviceId: string): Promise<void>;
+}
+
+export interface DeviceAuthService {
+  authenticateDevice(userId: string, deviceInfo: DeviceInfo): Promise<string>;
+  validateDeviceToken(token: string): Promise<boolean>;
+  revokeDevice(userId: string, deviceId: string): Promise<void>;
 }
 
 export interface AuthenticatedUser {
@@ -39,12 +67,6 @@ export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
-}
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-  deviceInfo?: DeviceRegistrationData;
 }
 
 export interface DeviceLoginCredentials {
@@ -148,12 +170,6 @@ export interface IPBlockData {
   reason: string;
   blockedAt: string;
   duration?: number;
-}
-
-export interface AuthenticatedUser {
-  id: string;
-  email: string;
-  // ... other user properties
 }
 
 export interface AuthRequest extends Request {

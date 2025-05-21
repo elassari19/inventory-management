@@ -11,7 +11,7 @@ import { errorHandler, notFoundHandler } from './errors';
 import './auth/passport.config';
 
 // Import routes
-import authRouter from './auth/auth.routes';
+import { authRouter } from './auth/auth.routes';
 
 // Import GraphQL server
 import { createApolloServer } from './graphql/server';
@@ -87,9 +87,9 @@ export const createApp = async () => {
   // Protect API routes with tenant validation
   app.use('/api', requireTenant);
 
-  // Initialize Apollo Server - await it properly
-  // await createApolloServer(app);
-  // console.log('GraphQL server initialized');
+  // Initialize Apollo Server
+  await createApolloServer(app);
+  console.log('GraphQL server initialized');
 
   // Root route should be defined before error handlers
   app.get('/', (req, res) => {

@@ -105,6 +105,54 @@ export class TenantRedisService {
   }
 
   /**
+   * Delete keys matching a pattern with tenant isolation
+   */
+  async deletePattern(pattern: string): Promise<number> {
+    const keys = await redisClient.keys(this.prefixKey(pattern));
+    if (keys.length > 0) {
+      return redisClient.del(keys);
+    }
+    return 0;
+  }
+
+  /**
+   * Cache GraphQL query results with tenant isolation
+   */
+  async cacheGraphQL(
+    operationName: string,
+    variables: any,
+    result: any,
+    ttlSeconds: number
+  ): Promise<void> {
+    const key = this.generateGraphQLKey(operationName, variables);
+    await this.set(key, JSON.stringify(result), ttlSeconds);
+  }
+
+  /**
+   * Get cached GraphQL query results
+   */
+  async getCachedGraphQL<T>(
+    operationName: string,
+    variables: any
+  ): Promise<T | null> {
+    const key = this.generateGraphQLKey(operationName, variables);
+    const cached = await this.get(key);
+    return cached ? JSON.parse(cached) : null;
+  }
+
+  /**
+   * Generate a unique key for GraphQL queries with tenant isolation
+   */
+  private generateGraphQLKey(operationName: string, variables: any): string {
+    const crypto = require('crypto');
+    const hash = crypto
+      .createHash('sha256')
+      .update(`${operationName}:${JSON.stringify(variables)}`)
+      .digest('hex');
+    return `graphql:${operationName}:${hash}`;
+  }
+
+  /**
    * Add tenant namespace prefix to a key
    */
   private prefixKey(key: string): string {

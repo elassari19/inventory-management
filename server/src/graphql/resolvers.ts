@@ -2,11 +2,25 @@ import { GraphQLScalarType, Kind } from 'graphql';
 import { repositories } from '../db/repositories';
 import { InventoryService } from '../services/inventory.service';
 import { AuthService } from '../auth/auth.service';
+import { getTenantCache, CacheType } from '../services/cache.service';
 import {
   UserInputError,
   AuthenticationError,
   ForbiddenError,
 } from 'apollo-server-express';
+
+// Helper to get/create tenant cache instance
+const getTenantCacheInstance = (tenantId: string) => {
+  let tenantCache = cacheMap.get(tenantId);
+  if (!tenantCache) {
+    tenantCache = getTenantCache(tenantId);
+    cacheMap.set(tenantId, tenantCache);
+  }
+  return tenantCache;
+};
+
+// Map to store cache instances per tenant
+const cacheMap = new Map<string, ReturnType<typeof getTenantCache>>();
 
 // Define JSON scalar type for handling JSON fields
 const JSONScalar = new GraphQLScalarType({
@@ -19,13 +33,25 @@ const JSONScalar = new GraphQLScalarType({
     return value;
   },
   parseLiteral(ast) {
-    if (ast.kind === Kind.OBJECT) {
-      // Convert ObjectValueNode to a plain JavaScript object
-      const obj = {};
-      // Handle ObjectValueNode properties if needed
-      return obj;
+    switch (ast.kind) {
+      case Kind.STRING:
+      case Kind.BOOLEAN:
+        return ast.value;
+      case Kind.INT:
+      case Kind.FLOAT:
+        return parseFloat(ast.value);
+      case Kind.OBJECT: {
+        const value = {};
+        ast.fields.forEach((field) => {
+          value[field.name.value] = this.parseLiteral(field.value);
+        });
+        return value;
+      }
+      case Kind.LIST:
+        return ast.values.map((n) => this.parseLiteral(n));
+      default:
+        return null;
     }
-    return null;
   },
 });
 
@@ -51,6 +77,59 @@ const checkTenantAccess = async (userId, tenantId) => {
   }
 
   return true;
+};
+
+// Helper to create a cache key for queries
+const createQueryKey = (
+  operation: string,
+  params: Record<string, any>,
+  tenantId: string
+): string => {
+  const sortedParams = Object.entries(params)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {});
+
+  return `${operation}:${tenantId}:${JSON.stringify(sortedParams)}`;
+};
+
+const withCache = async <T>(
+  key: string,
+  type: CacheType,
+  resolver: () => Promise<T>,
+  tenantId: string
+): Promise<T> => {
+  // Get or create cache instance for this tenant
+  let tenantCache = cacheMap.get(tenantId);
+  if (!tenantCache) {
+    tenantCache = getTenantCache(tenantId);
+    cacheMap.set(tenantId, tenantCache);
+  }
+
+  // Use getOrSet pattern for automatic caching
+  return tenantCache.getOrSet<T>(key, resolver, type);
+};
+
+// Helper function to validate user roles for a tenant
+const validateTenantRoles = async (
+  userId: string,
+  tenantId: string,
+  requiredRoles: string[] = []
+) => {
+  const tenantUser = await repositories.tenantUsers.findByTenantAndUser(
+    tenantId,
+    userId
+  );
+  if (!tenantUser) {
+    return false;
+  }
+
+  // If no specific roles are required, just being a member is enough
+  if (requiredRoles.length === 0) {
+    return true;
+  }
+
+  // Check if user has any of the required roles
+  return tenantUser.roles.some((role) => requiredRoles.includes(role));
 };
 
 export const resolvers = {
@@ -135,29 +214,40 @@ export const resolvers = {
         throw new ForbiddenError('Access denied to this tenant');
       }
 
-      // If search is provided, use the search function
-      if (search) {
-        return repositories.products.searchProducts(tenantId, search, {
-          categoryId,
-          brandId,
-          limit,
-          offset,
-        });
-      }
+      const cacheKey = createQueryKey(
+        'products',
+        { tenantId, categoryId, brandId, search, limit, offset },
+        tenantId
+      );
 
-      // Build query options
-      const options = { limit, offset };
-      let whereConditions = { tenant_id: tenantId };
+      return withCache(
+        cacheKey,
+        CacheType.VOLATILE,
+        async () => {
+          if (search) {
+            return repositories.products.searchProducts(tenantId, search, {
+              categoryId,
+              brandId,
+              limit,
+              offset,
+            });
+          }
 
-      if (categoryId) {
-        whereConditions['category_id'] = categoryId;
-      }
+          const options = { limit, offset };
+          let whereConditions = { tenant_id: tenantId };
 
-      if (brandId) {
-        whereConditions['brand_id'] = brandId;
-      }
+          if (categoryId) {
+            whereConditions['category_id'] = categoryId;
+          }
 
-      return repositories.products.findAll(tenantId, options);
+          if (brandId) {
+            whereConditions['brand_id'] = brandId;
+          }
+
+          return repositories.products.findAll(tenantId, options);
+        },
+        tenantId
+      );
     },
 
     product: async (_, { id }, { user }) => {
@@ -728,38 +818,60 @@ export const resolvers = {
   // Mutations
   Mutation: {
     // Auth mutations
-    login: async (_, { email, password }) => {
+    login: async ({ email, password }) => {
       try {
-        // Use validateUser instead of login since that's what's available in AuthService
-        const user = await AuthService.validateUser(email, password);
+        // Use login which handles tracking and device authentication
+        const user = await AuthService.login({ email, password });
         if (!user) {
           throw new AuthenticationError('Invalid email or password');
         }
 
-        // Generate a token for the user
+        // Get user's tenants
+        const tenants = await repositories.tenants.findUserTenants(user.id);
+
+        // Generate tokens
         const token = await AuthService.generateToken(user);
+        const refreshToken = await AuthService.generateRefreshToken(user.id);
 
         return {
           token,
+          refreshToken,
           user,
+          tenants,
+          currentTenant: null,
         };
       } catch (error) {
         throw new AuthenticationError('Login failed: ' + error.message);
       }
     },
 
-    register: async (_, { email, password, name }) => {
+    register: async (_, { email, password, firstName, lastName }) => {
       try {
-        // Create user data object matching what the register method expects
-        const userData = { email, password, name };
-        const user = await AuthService.register(userData);
+        // Create user with basic information
+        const user = await AuthService.register({
+          email,
+          password,
+          firstName,
+          lastName,
+        });
 
-        // Generate a token for the new user
+        // Get tokens for the new user
         const token = await AuthService.generateToken(user);
+        const refreshToken = await AuthService.generateRefreshToken(user.id);
+
+        // Create a personal tenant for the user
+        const personalTenant = await repositories.tenants.create({
+          name: `${name}'s Workspace`,
+          type: 'PERSONAL',
+          owner_id: user.id,
+        });
 
         return {
           token,
+          refreshToken,
           user,
+          tenants: [personalTenant],
+          currentTenant: personalTenant,
         };
       } catch (error) {
         throw new UserInputError('Registration failed: ' + error.message);
@@ -772,20 +884,34 @@ export const resolvers = {
       }
 
       try {
-        // Since selectTenant isn't defined in AuthService, we implement it here
-        // Check if user has access to the tenant
-        const hasAccess = await checkTenantAccess(user.id, tenantId);
+        // Check if the tenant exists
+        const tenant = await repositories.tenants.findById(tenantId);
+        if (!tenant) {
+          throw new UserInputError('Tenant not found');
+        }
 
-        if (!hasAccess) {
+        // Check user's access and roles
+        const tenantUser = await repositories.tenantUsers.findByTenantAndUser(
+          tenantId,
+          user.id
+        );
+
+        if (!tenantUser && tenant.owner_id !== user.id) {
           throw new ForbiddenError('You do not have access to this tenant');
         }
 
-        // Generate a token with tenant context
+        // Update last accessed timestamp
+        await repositories.tenantUsers.updateLastAccessed(tenantId, user.id);
+
+        // Generate new tokens with tenant context
         const token = await AuthService.generateToken(user, tenantId);
+        const refreshToken = await AuthService.generateRefreshToken(user.id);
 
         return {
           token,
+          refreshToken,
           user,
+          currentTenant: tenant,
         };
       } catch (error) {
         throw new UserInputError('Failed to select tenant: ' + error.message);

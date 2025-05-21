@@ -1,14 +1,26 @@
 import { ApolloServerPlugin } from 'apollo-server-plugin-base';
 import { performance } from 'perf_hooks';
 import { promisify } from 'util';
-import { redisClient } from '../../lib/redis';
+import { redisClient } from '../lib/redis';
 
 interface OperationMetrics {
   operationName: string;
+  operationType: string;
   duration: number;
   timestamp: number;
   success: boolean;
   cacheHit?: boolean;
+  tenantId?: string;
+  userId?: string;
+  errorMessage?: string;
+  path?: string[];
+}
+
+// Store metrics in Redis hash
+async function storeMetrics(metrics: OperationMetrics) {
+  const metricsKey = `metrics:${metrics.operationName}:${Date.now()}`;
+  await redisClient.hset(metricsKey, metrics);
+  await redisClient.expire(metricsKey, 86400); // 24 hours
 }
 
 export const createPerformancePlugin = (): ApolloServerPlugin => {
@@ -25,16 +37,14 @@ export const createPerformancePlugin = (): ApolloServerPlugin => {
 
           const metrics: OperationMetrics = {
             operationName,
+            operationType: operation?.operation || 'unknown',
             duration,
             timestamp: Date.now(),
             success: !response.errors,
             cacheHit: response.http?.headers.get('apollo-cache-hit') === 'true',
           };
 
-          // Store metrics in Redis with 24h expiration
-          const metricsKey = `metrics:${operationName}:${Date.now()}`;
-          await hsetAsync(metricsKey);
-          redisClient.expire(metricsKey, 86400); // 24 hours
+          await storeMetrics(metrics);
 
           // Log metrics for monitoring
           console.log(`Operation: ${operationName}`, {

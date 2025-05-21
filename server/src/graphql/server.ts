@@ -1,14 +1,19 @@
 import { ApolloServer } from 'apollo-server-express';
-import { Application } from 'express';
+import { Application, Request } from 'express';
 import { typeDefs } from './schema';
 import { resolvers } from './resolvers';
 import { RedisCache } from 'apollo-server-cache-redis';
 import Redis from 'ioredis';
+import { repositories } from '../db/repositories';
+import { AuthService } from '../auth/auth.service';
+import { InventoryService } from '../services/inventory.service';
+import { graphqlRateLimiter } from '../middleware/graphql-rate-limiter';
 
 // Import environment variables
 import dotenv from 'dotenv';
-import { redisConfig } from '../../utils/redis.config';
+import { redisConfig } from '../utils/redis.config';
 import { createPerformancePlugin } from './monitoring';
+import { createCachePlugin } from './cache-plugin';
 dotenv.config();
 
 // Initialize Redis client for Apollo Cache
@@ -21,30 +26,34 @@ export const createApolloServer = async (app: Application) => {
     resolvers,
     introspection: true,
     cache: new RedisCache(redisConfig),
-    context: ({ req }) => ({
-      user: req.user,
-    }),
-    plugins: [
-      // Add performance monitoring plugin
-      {
-        async serverWillStart() {
-          console.log('Apollo Server starting...');
+    context: async ({ req }) => {
+      // Get user and tenant context
+      const user = req.user;
+      const tenant = req.tenant;
+      const device = req.device;
+
+      // Check rate limits if we have a user and tenant
+      if (user && tenant) {
+        const rateLimit = await graphqlRateLimiter(user, tenant);
+        // Add rate limit info to response headers
+        req.res?.setHeader('X-RateLimit-Remaining', rateLimit.remaining);
+        req.res?.setHeader('X-RateLimit-Reset', rateLimit.resetMs);
+      }
+
+      return {
+        user,
+        tenant,
+        device,
+        // Add repositories for data access
+        repositories,
+        // Add services that might be needed in resolvers
+        services: {
+          auth: AuthService,
+          inventory: InventoryService,
         },
-        async requestDidStart() {
-          return {
-            async willSendResponse({ response }) {
-              // Log response time and cache status
-              console.log(
-                `Request completed: ${response.http?.headers.get(
-                  'x-response-time'
-                )}ms`
-              );
-            },
-          };
-        },
-      },
-      createPerformancePlugin(),
-    ],
+      };
+    },
+    plugins: [createPerformancePlugin(), createCachePlugin()],
   });
 
   await server.start();

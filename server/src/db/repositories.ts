@@ -237,6 +237,20 @@ export class TenantUserRepository extends BaseRepository {
       throw error;
     }
   }
+
+  async updateLastAccessed(tenantId: string, userId: string): Promise<void> {
+    try {
+      const query = `
+        UPDATE tenant_users 
+        SET last_accessed = CURRENT_TIMESTAMP 
+        WHERE tenant_id = $1 AND user_id = $2
+      `;
+      await pool.query(query, [tenantId, userId]);
+    } catch (error) {
+      console.error('Error in updateLastAccessed:', error);
+      throw error;
+    }
+  }
 }
 
 export class DeviceRepository extends BaseRepository {

@@ -250,6 +250,50 @@ export class TenantCache {
   async getStats(): Promise<any> {
     return CacheStats.getStats(this.tenantRedis.getTenantId());
   }
+
+  /**
+   * Cache a GraphQL query result
+   */
+  async cacheGraphQLQuery(
+    operationName: string,
+    variables: any,
+    result: any,
+    type: CacheType = CacheType.VOLATILE
+  ): Promise<void> {
+    await this.tenantRedis.cacheGraphQL(
+      operationName,
+      variables,
+      result,
+      DEFAULT_TTL[type]
+    );
+    this.stats.recordHit();
+  }
+
+  /**
+   * Get cached GraphQL query result
+   */
+  async getCachedGraphQLQuery<T>(
+    operationName: string,
+    variables: any
+  ): Promise<T | null> {
+    const result = await this.tenantRedis.getCachedGraphQL<T>(
+      operationName,
+      variables
+    );
+    if (result) {
+      this.stats.recordHit();
+    } else {
+      this.stats.recordMiss();
+    }
+    return result;
+  }
+
+  /**
+   * Invalidate cached GraphQL queries by operation name
+   */
+  async invalidateGraphQLQueries(operationName: string): Promise<void> {
+    await this.tenantRedis.deletePattern(`graphql:${operationName}:*`);
+  }
 }
 
 /**
