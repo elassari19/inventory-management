@@ -48,6 +48,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="inventory"
+        options={{
+          title: t('common.inventory'),
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="bolt.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: t('common.settings'),

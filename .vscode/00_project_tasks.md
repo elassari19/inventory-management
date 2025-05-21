@@ -15,13 +15,13 @@
 - [x] Implement multi-tenancy service layer
 - [x] Build core inventory management APIs
 - [x] Create data migration utilities
-- [ ] Develop external API endpoints with GraphQL
+- [x] Develop external API endpoints with GraphQL
 
 ### Phase 3: Mobile Application
 
-- [ ] Set up Expo project structure with routing
-- [ ] Implement authentication flows
-- [ ] Build inventory management screens
+- [x] Set up Expo project structure with routing
+- [x] Implement authentication flows
+- [x] Build inventory management screens
 - [ ] Develop barcode/QR scanning functionality
 - [ ] Create offline-first data synchronization
 
