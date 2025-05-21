@@ -573,6 +573,24 @@ export class InventoryService {
   }
 
   /**
+   * Find a product by barcode
+   */
+  static async findProductByBarcode(tenantId: string, barcode: string) {
+    try {
+      const result = await pool.query(
+        `SELECT * FROM products 
+         WHERE barcode = $1 AND tenant_id = $2`,
+        [barcode, tenantId]
+      );
+
+      return result.rows[0] || null;
+    } catch (error) {
+      console.error('Error finding product by barcode:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get products with stock levels below reorder point
    */
   static async getProductsBelowReorderPoint(tenantId: string) {

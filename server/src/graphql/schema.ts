@@ -1,3 +1,6 @@
+// Include barcode scanning type definitions
+import { typeDefs as barcodeScanTypeDefs } from './barcodeScan';
+
 import { gql } from 'apollo-server-express';
 
 export const typeDefs = gql`
@@ -207,13 +210,13 @@ export const typeDefs = gql`
     # User queries
     me: User
     user(id: ID!): User
-    
+
     # Tenant queries
     myTenants: [Tenant!]!
     tenant(id: ID!): Tenant
     currentTenant: Tenant
     tenantUsers(tenantId: ID!): [TenantUser!]!
-    
+
     # Product queries
     products(
       tenantId: ID!
@@ -225,23 +228,23 @@ export const typeDefs = gql`
     ): [Product!]!
     product(id: ID!): Product
     productByBarcode(tenantId: ID!, barcode: String!): Product
-    
+
     # Category queries
     categories(tenantId: ID!): [Category!]!
     category(id: ID!): Category
-    
+
     # Brand queries
     brands(tenantId: ID!): [Brand!]!
     brand(id: ID!): Brand
-    
+
     # Location queries
     locations(tenantId: ID!): [Location!]!
     location(id: ID!): Location
-    
+
     # Device queries
     devices(tenantId: ID!): [Device!]!
     device(id: ID!): Device
-    
+
     # Inventory transaction queries
     inventoryTransactions(
       tenantId: ID!
@@ -255,7 +258,7 @@ export const typeDefs = gql`
       offset: Int
     ): [InventoryTransaction!]!
     inventoryTransaction(id: ID!): InventoryTransaction
-    
+
     # Analytics and dashboards
     productStockLevels(tenantId: ID!, belowReorderPoint: Boolean): [Product!]!
     inventoryValueReport(tenantId: ID!): InventoryValueReport
@@ -275,14 +278,14 @@ export const typeDefs = gql`
     tenantId: String!
     generatedAt: String!
   }
-  
+
   type CategoryValue {
     categoryId: String!
     categoryName: String!
     value: Float!
     productCount: Int!
   }
-  
+
   type TransactionSummary {
     label: String!
     count: Int!
@@ -296,22 +299,30 @@ export const typeDefs = gql`
     login(email: String!, password: String!): AuthPayload
     register(email: String!, password: String!, name: String): AuthPayload
     selectTenant(tenantId: ID!): AuthPayload
-    
+
     # Tenant mutations
     createTenant(name: String!, type: StockType!): Tenant
     updateTenant(id: ID!, name: String, type: StockType): Tenant
     deleteTenant(id: ID!): Boolean
-    
+
     # Tenant users mutations
-    inviteUserToTenant(tenantId: ID!, email: String!, roles: [String!]!): TenantUser
-    updateTenantUserRoles(tenantId: ID!, userId: ID!, roles: [String!]!): TenantUser
+    inviteUserToTenant(
+      tenantId: ID!
+      email: String!
+      roles: [String!]!
+    ): TenantUser
+    updateTenantUserRoles(
+      tenantId: ID!
+      userId: ID!
+      roles: [String!]!
+    ): TenantUser
     removeTenantUser(tenantId: ID!, userId: ID!): Boolean
-    
+
     # Device mutations
     registerDevice(tenantId: ID!, name: String!): DeviceRegistrationPayload
     updateDevice(id: ID!, name: String, status: DeviceStatus): Device
     deleteDevice(id: ID!): Boolean
-    
+
     # Product mutations
     createProduct(
       tenantId: ID!
@@ -345,7 +356,7 @@ export const typeDefs = gql`
       customFields: JSON
     ): Product
     deleteProduct(id: ID!): Boolean
-    
+
     # Category mutations
     createCategory(
       tenantId: ID!
@@ -360,7 +371,7 @@ export const typeDefs = gql`
       parentId: String
     ): Category
     deleteCategory(id: ID!): Boolean
-    
+
     # Brand mutations
     createBrand(
       tenantId: ID!
@@ -375,7 +386,7 @@ export const typeDefs = gql`
       logoUrl: String
     ): Brand
     deleteBrand(id: ID!): Boolean
-    
+
     # Location mutations
     createLocation(
       tenantId: ID!
@@ -392,7 +403,7 @@ export const typeDefs = gql`
       locationType: LocationType
     ): Location
     deleteLocation(id: ID!): Boolean
-    
+
     # Inventory transaction mutations
     createInventoryTransaction(
       tenantId: ID!
@@ -404,7 +415,7 @@ export const typeDefs = gql`
       notes: String
       customFields: JSON
     ): InventoryTransaction
-    
+
     # Specialized inventory operations
     stockReceipt(
       tenantId: ID!
@@ -434,7 +445,7 @@ export const typeDefs = gql`
       quantity: Int!
       locationId: ID!
     ): InventoryTransaction
-    
+
     # Barcode operations (for mobile scanning)
     scanProductBarcode(
       tenantId: ID!
@@ -453,136 +464,10 @@ export const typeDefs = gql`
     tenants: [Tenant!]!
     currentTenant: Tenant
   }
-  
+
   # Device registration
   type DeviceRegistrationPayload {
     device: Device!
     token: String!
-  }
-`;
-
-  type ScrapingJob {
-    id: ID!
-    status: String!
-    platform: String!
-    config: String!
-    startTime: String
-    endTime: String
-    createdAt: String!
-    updatedAt: String!
-    userId: String!
-    user: User!
-    adReports: [AdReport!]!
-    metrics: JobMetrics
-  }
-
-  type JobMetrics {
-    id: ID!
-    duration: Int
-    adsScraped: Int!
-    successRate: Float!
-    errorCount: Int!
-    resourceUsage: String
-    createdAt: String!
-    updatedAt: String!
-    scrapingJobId: String!
-  }
-
-  type Actor {
-    id: ID!
-    title: String!
-    namespace: String!
-    description: String!
-    authorName: String!
-    authorBadgeColor: String!
-    icon: String!
-    iconBg: String!
-    script: String!
-    createdAt: String!
-    updatedAt: String!
-    user: User!
-    executions: [ActorExecution!]!
-    ratings: [ActorRating!]!
-    averageRating: Float
-  }
-
-  type ActorRating {
-    id: ID!
-    rating: Float!
-    comment: String
-    createdAt: String!
-    updatedAt: String!
-    user: User!
-    actor: Actor!
-  }
-
-  type ActorExecution {
-    id: ID!
-    status: String!
-    startTime: String!
-    endTime: String
-    results: JSON
-    logs: String
-    createdAt: String!
-    updatedAt: String!
-    actor: Actor!
-  }
-
-  type Query {
-    user(id: ID!): User
-    users: [User!]!
-    adReports(platform: String): [AdReport!]!
-    actors(userId: ID): [Actor!]!
-    actor(namespace: String!): Actor
-    actorExecutions(actorId: ID!, limit: Int): [ActorExecution!]!
-    actorRatings(actorId: ID!): [ActorRating!]!
-    userRating(actorId: ID!, userId: ID!): ActorRating
-  }
-
-  type Mutation {
-    updateUser(id: ID!, name: String!): User!
-    createAdReport(platform: String!, adContent: String!): AdReport!
-    generateAnalytics(reportId: ID!): Analytics!
-    createActor(
-      title: String!
-      namespace: String!
-      description: String!
-      authorName: String!
-      authorBadgeColor: String!
-      icon: String!
-      iconBg: String!
-      script: String!
-    ): Actor!
-
-    updateActor(
-      id: ID!
-      title: String
-      namespace: String
-      description: String
-      authorName: String
-      authorBadgeColor: String
-      icon: String
-      iconBg: String
-      script: String
-    ): Actor!
-
-    rateActor(actorId: ID!, rating: Float!, comment: String): ActorRating!
-
-    updateRating(id: ID!, rating: Float, comment: String): ActorRating!
-
-    deleteRating(id: ID!): Boolean!
-
-    deleteActor(id: ID!): Boolean!
-
-    executeActor(id: ID!, url: String, options: JSON): ActorExecution!
-  }
-
-  type Analytics {
-    id: ID!
-    userId: String!
-    reportId: String!
-    insights: String!
-    createdAt: String!
-    updatedAt: String!
   }
 `;

@@ -43,6 +43,10 @@ export default function InventoryScreen() {
   const { data: categoriesData } = useQuery(GET_CATEGORIES);
   const categories = categoriesData?.categories || [];
 
+  const handleScanPress = () => {
+    router.push('./scan');
+  };
+
   const handleSearch = useCallback(
     (text: string) => {
       setSearchText(text);
@@ -157,6 +161,14 @@ export default function InventoryScreen() {
         keyboardShouldPersistTaps="handled"
         style={{ flexGrow: 1 }}
         nestedScrollEnabled
+      />
+
+      <FAB
+        icon={({ size, color }) => (
+          <IconSymbol name="barcode.viewfinder" size={size} color={color} />
+        )}
+        style={[styles.fab, { bottom: 80 }]}
+        onPress={handleScanPress}
       />
 
       <FAB

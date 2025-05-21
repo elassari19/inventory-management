@@ -8,6 +8,7 @@ import {
   AuthenticationError,
   ForbiddenError,
 } from 'apollo-server-express';
+import { resolvers as barcodeScanResolvers } from './barcodeScan';
 
 // Helper to get/create tenant cache instance
 const getTenantCacheInstance = (tenantId: string) => {
