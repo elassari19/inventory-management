@@ -22,7 +22,7 @@
 - [x] Set up Expo project structure with routing
 - [x] Implement authentication flows
 - [x] Build inventory management screens
-- [ ] Develop barcode/QR scanning functionality
+- [x] Develop barcode/QR scanning functionality
 - [ ] Create offline-first data synchronization
 
 ### Phase 4: Web Admin Dashboard

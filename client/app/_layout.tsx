@@ -17,6 +17,7 @@ import {
   DefaultTheme as PaperDefaultTheme,
   MD3DarkTheme,
 } from 'react-native-paper';
+import { initSyncService } from '@/services/sync.service';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -36,6 +37,11 @@ export default function RootLayout() {
       } else if (token) {
         // Redirect to home if authenticated
         router.replace('/');
+
+        // Initialize offline sync service
+        initSyncService().catch((error) => {
+          console.error('Failed to initialize sync service:', error);
+        });
       }
     }
   }, [token, segments, isLoading]);
