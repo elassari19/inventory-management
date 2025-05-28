@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppDispatch } from '../hooks/redux';
-import { loginSuccess } from '../store/slices/authSlice';
+import { loginSuccess, loginFailure } from '../store/slices/authSlice';
+import { setCurrentTenant } from '../store/slices/tenantSlice';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import {
@@ -11,28 +12,82 @@ import {
   CardHeader,
   CardTitle,
 } from '../components/ui/Card';
+import { useMutation } from '@apollo/client';
+import { LOGIN_MUTATION } from '../services/graphql/queries';
+import { useToast } from '../components/ui/ToastProvider';
 
 export function LoginPage() {
   const dispatch = useAppDispatch();
+  const { toast } = useToast();
   const [email, setEmail] = useState('admin@ventory.com');
   const [password, setPassword] = useState('admin123');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [loginMutation] = useMutation(LOGIN_MUTATION, {
+    onCompleted: (data) => {
+      if (data.login) {
+        // Store authentication data
+        localStorage.setItem('token', data.login.token);
+        localStorage.setItem('refreshToken', data.login.refreshToken);
+
+        // Update Redux store
+        dispatch(
+          loginSuccess({
+            user: {
+              id: data.login.user.id,
+              email: data.login.user.email,
+              firstName: data.login.user.firstName,
+              lastName: data.login.user.lastName,
+            },
+            token: data.login.token,
+            refreshToken: data.login.refreshToken,
+            tenants: data.login.tenants || [],
+            currentTenant: data.login.currentTenant || data.login.tenants?.[0],
+          })
+        );
+
+        // Set current tenant if available
+        const currentTenant =
+          data.login.currentTenant || data.login.tenants?.[0];
+        if (currentTenant) {
+          dispatch(setCurrentTenant(currentTenant));
+        }
+
+        toast({
+          title: 'Login Successful',
+          description: 'Welcome to Ventory Dashboard',
+          type: 'success',
+        });
+      }
+    },
+    onError: (error) => {
+      console.error('Login error:', error);
+      dispatch(loginFailure(error.message));
+      toast({
+        title: 'Login Failed',
+        description: error.message || 'Invalid email or password',
+        type: 'error',
+      });
+      setIsLoading(false);
+    },
+  });
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock login - in real app, this would call an API
-    dispatch(
-      loginSuccess({
-        user: {
-          id: '1',
-          email: email,
-          name: 'System Administrator',
-          role: 'super_admin',
-          tenantId: 'system',
-          permissions: ['*'],
+    setIsLoading(true);
+
+    try {
+      await loginMutation({
+        variables: {
+          email,
+          password,
         },
-        token: 'mock-jwt-token',
-      })
-    );
+      });
+    } catch (error) {
+      // Error handling is done in onError callback
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -83,8 +138,8 @@ export function LoginPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full">
-              Sign In
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </CardFooter>
         </form>

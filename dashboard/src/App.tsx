@@ -18,7 +18,7 @@ function App() {
   return (
     <ErrorBoundary>
       <ToastProvider>
-        {!isAuthenticated ? (
+        {isAuthenticated ? (
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
