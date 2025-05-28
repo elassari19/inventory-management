@@ -4,9 +4,11 @@ import {
   createHttpLink,
   from,
   split,
+  ApolloLink,
 } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
+import { RetryLink } from '@apollo/client/link/retry';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient } from 'graphql-ws';
@@ -28,34 +30,51 @@ const wsLink = new GraphQLWsLink(
       : 'ws://localhost:3001/graphql',
     connectionParams: () => {
       const token = store.getState().auth.token;
+      const tenantId =
+        store.getState().tenant.currentTenant?.id ||
+        localStorage.getItem('currentTenantId');
       return {
         authorization: token ? `Bearer ${token}` : '',
+        'x-tenant-id': tenantId || '',
       };
     },
   })
 );
 
-// Auth Link
+// Auth Link - adds authentication headers
 const authLink = setContext((_, { headers }) => {
-  // Get the authentication token from Redux store
+  // Get the authentication token and tenant from Redux store
   const token = store.getState().auth.token;
+  const tenantId =
+    store.getState().tenant.currentTenant?.id ||
+    localStorage.getItem('currentTenantId');
 
   return {
     headers: {
       ...headers,
       authorization: token ? `Bearer ${token}` : '',
-      'x-tenant-id': localStorage.getItem('tenantId') || '',
+      'x-tenant-id': tenantId || '',
     },
   };
 });
 
-// Error Link
+// Error Link - handles GraphQL and network errors
 const errorLink = onError(({ graphQLErrors, networkError }) => {
   if (graphQLErrors) {
     graphQLErrors.forEach(({ message, locations, path }) => {
       console.error(
         `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
       );
+
+      // Handle authentication errors
+      if (
+        message.includes('Unauthorized') ||
+        message.includes('Authentication')
+      ) {
+        // Dispatch logout action and redirect to login
+        store.dispatch({ type: 'auth/logout' });
+        window.location.href = '/login';
+      }
     });
   }
 
@@ -64,10 +83,24 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 
     // Handle authentication errors
     if ('statusCode' in networkError && networkError.statusCode === 401) {
-      // Dispatch logout action
+      // Dispatch logout action and redirect to login
       store.dispatch({ type: 'auth/logout' });
+      window.location.href = '/login';
     }
   }
+});
+
+// Retry Link - retries failed requests
+const retryLink = new RetryLink({
+  delay: {
+    initial: 300,
+    max: Infinity,
+    jitter: true,
+  },
+  attempts: {
+    max: 5,
+    retryIf: (error, _operation) => !!error,
+  },
 });
 
 // Split link for HTTP vs WebSocket
@@ -80,7 +113,7 @@ const splitLink = split(
     );
   },
   wsLink,
-  from([errorLink, authLink, httpLink])
+  from([retryLink, errorLink, authLink, httpLink])
 );
 
 // Create the Apollo Client instance
@@ -90,6 +123,42 @@ export const apolloClient = new ApolloClient({
     typePolicies: {
       Query: {
         fields: {
+          products: {
+            keyArgs: ['tenantId', 'search', 'categoryId', 'brandId'],
+            merge(existing = [], incoming) {
+              return [...existing, ...incoming];
+            },
+          },
+          categories: {
+            keyArgs: ['tenantId', 'search'],
+            merge(existing = [], incoming) {
+              return [...existing, ...incoming];
+            },
+          },
+          brands: {
+            keyArgs: ['tenantId', 'search'],
+            merge(existing = [], incoming) {
+              return [...existing, ...incoming];
+            },
+          },
+          locations: {
+            keyArgs: ['tenantId', 'search'],
+            merge(existing = [], incoming) {
+              return [...existing, ...incoming];
+            },
+          },
+          inventory: {
+            keyArgs: ['tenantId', 'locationId', 'productId'],
+            merge(existing = [], incoming) {
+              return [...existing, ...incoming];
+            },
+          },
+          transactions: {
+            keyArgs: ['tenantId', 'type', 'locationId'],
+            merge(existing = [], incoming) {
+              return [...existing, ...incoming];
+            },
+          },
           tenants: {
             keyArgs: ['filter', 'sort'],
             merge(existing = [], incoming) {
@@ -97,19 +166,13 @@ export const apolloClient = new ApolloClient({
             },
           },
           users: {
-            keyArgs: ['filter', 'sort'],
-            merge(existing = [], incoming) {
-              return [...existing, ...incoming];
-            },
-          },
-          inventory: {
-            keyArgs: ['filter', 'sort'],
+            keyArgs: ['tenantId', 'filter', 'sort'],
             merge(existing = [], incoming) {
               return [...existing, ...incoming];
             },
           },
           auditLogs: {
-            keyArgs: ['filter', 'sort'],
+            keyArgs: ['tenantId', 'filter', 'sort'],
             merge(existing = [], incoming) {
               return [...existing, ...incoming];
             },

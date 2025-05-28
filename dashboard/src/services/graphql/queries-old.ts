@@ -239,18 +239,8 @@ export const DELETE_PRODUCT = gql`
 
 // Category Queries
 export const GET_CATEGORIES = gql`
-  query GetCategories(
-    $tenantId: ID!
-    $search: String
-    $limit: Int
-    $offset: Int
-  ) {
-    categories(
-      tenantId: $tenantId
-      search: $search
-      limit: $limit
-      offset: $offset
-    ) {
+  query GetCategories($tenantId: ID!, $search: String, $limit: Int, $offset: Int) {
+    categories(tenantId: $tenantId, search: $search, limit: $limit, offset: $offset) {
       id
       name
       description
@@ -307,12 +297,7 @@ export const DELETE_CATEGORY = gql`
 // Brand Queries
 export const GET_BRANDS = gql`
   query GetBrands($tenantId: ID!, $search: String, $limit: Int, $offset: Int) {
-    brands(
-      tenantId: $tenantId
-      search: $search
-      limit: $limit
-      offset: $offset
-    ) {
+    brands(tenantId: $tenantId, search: $search, limit: $limit, offset: $offset) {
       id
       name
       description
@@ -368,18 +353,8 @@ export const DELETE_BRAND = gql`
 
 // Location Queries
 export const GET_LOCATIONS = gql`
-  query GetLocations(
-    $tenantId: ID!
-    $search: String
-    $limit: Int
-    $offset: Int
-  ) {
-    locations(
-      tenantId: $tenantId
-      search: $search
-      limit: $limit
-      offset: $offset
-    ) {
+  query GetLocations($tenantId: ID!, $search: String, $limit: Int, $offset: Int) {
+    locations(tenantId: $tenantId, search: $search, limit: $limit, offset: $offset) {
       id
       name
       description
@@ -442,371 +417,279 @@ export const DELETE_LOCATION = gql`
   }
 `;
 
+// Tenant Queries and Mutations
+export const GET_TENANTS = gql`
+  query GetTenants($filters: TenantFilters, $pagination: PaginationInput) {
+    tenants(filters: $filters, pagination: $pagination) {
+      data {
+        id
+        name
+        slug
+        status
+        plan
+        domain
+        logo
+        contactEmail
+        createdAt
+        updatedAt
+        usage {
+          users
+          storage
+          apiCalls
+          locations
+          products
+        }
+        limits {
+          maxUsers
+          maxStorage
+          maxApiCalls
+          maxLocations
+          maxProducts
+        }
+      }
+      pagination {
+        page
+        limit
+        total
+        totalPages
+      }
+    }
+  }
+`;
+
+export const CREATE_TENANT = gql`
+  mutation CreateTenant($input: CreateTenantInput!) {
+    createTenant(input: $input) {
+      id
+      name
+      slug
+      status
+      plan
+      contactEmail
+      createdAt
+    }
+  }
+`;
+
+export const UPDATE_TENANT = gql`
+  mutation UpdateTenant($id: ID!, $input: UpdateTenantInput!) {
+    updateTenant(id: $id, input: $input) {
+      id
+      name
+      slug
+      status
+      plan
+      domain
+      contactEmail
+      updatedAt
+    }
+  }
+`;
+
+// Product Queries
+export const GET_PRODUCTS = gql`
+  query GetProducts($filters: ProductFilters, $pagination: PaginationInput) {
+    products(filters: $filters, pagination: $pagination) {
+      data {
+        id
+        sku
+        name
+        description
+        category
+        brand
+        unitPrice
+        currency
+        status
+        images
+        createdAt
+        updatedAt
+      }
+      pagination {
+        page
+        limit
+        total
+        totalPages
+      }
+    }
+  }
+`;
+
 // Inventory Queries
 export const GET_INVENTORY = gql`
-  query GetInventory(
-    $tenantId: ID!
-    $locationId: ID
-    $productId: ID
-    $limit: Int
-    $offset: Int
-  ) {
-    inventory(
-      tenantId: $tenantId
-      locationId: $locationId
-      productId: $productId
-      limit: $limit
-      offset: $offset
-    ) {
-      id
-      quantity
-      reservedQuantity
-      product {
+  query GetInventory($filters: InventoryFilters, $pagination: PaginationInput) {
+    inventory(filters: $filters, pagination: $pagination) {
+      data {
         id
-        name
-        sku
-        barcode
-        price
-        cost
-        minStock
+        productId
+        locationId
+        quantity
+        reservedQuantity
+        availableQuantity
+        reorderPoint
         maxStock
-      }
-      location {
-        id
-        name
-        type
-      }
-      tenant {
-        id
-        name
-      }
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const UPDATE_INVENTORY = gql`
-  mutation UpdateInventory($id: ID!, $input: UpdateInventoryInput!) {
-    updateInventory(id: $id, input: $input) {
-      id
-      quantity
-      reservedQuantity
-      product {
-        id
-        name
-        sku
-        barcode
-      }
-      location {
-        id
-        name
-        type
-      }
-      tenant {
-        id
-        name
-      }
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-// Transaction Queries
-export const GET_TRANSACTIONS = gql`
-  query GetTransactions(
-    $tenantId: ID!
-    $type: TransactionType
-    $locationId: ID
-    $productId: ID
-    $limit: Int
-    $offset: Int
-  ) {
-    transactions(
-      tenantId: $tenantId
-      type: $type
-      locationId: $locationId
-      productId: $productId
-      limit: $limit
-      offset: $offset
-    ) {
-      id
-      type
-      quantity
-      previousQuantity
-      newQuantity
-      reason
-      notes
-      product {
-        id
-        name
-        sku
-        barcode
-      }
-      location {
-        id
-        name
-        type
-      }
-      user {
-        id
-        firstName
-        lastName
-        email
-      }
-      tenant {
-        id
-        name
-      }
-      createdAt
-    }
-  }
-`;
-
-export const CREATE_TRANSACTION = gql`
-  mutation CreateTransaction($input: CreateTransactionInput!) {
-    createTransaction(input: $input) {
-      id
-      type
-      quantity
-      previousQuantity
-      newQuantity
-      reason
-      notes
-      product {
-        id
-        name
-        sku
-        barcode
-      }
-      location {
-        id
-        name
-        type
-      }
-      user {
-        id
-        firstName
-        lastName
-        email
-      }
-      tenant {
-        id
-        name
-      }
-      createdAt
-    }
-  }
-`;
-
-// Analytics Queries
-export const GET_ANALYTICS_OVERVIEW = gql`
-  query GetAnalyticsOverview(
-    $tenantId: ID!
-    $locationId: ID
-    $dateRange: DateRangeInput
-  ) {
-    analyticsOverview(
-      tenantId: $tenantId
-      locationId: $locationId
-      dateRange: $dateRange
-    ) {
-      totalProducts
-      totalLocations
-      totalValue
-      lowStockCount
-      outOfStockCount
-      recentTransactions
-      topMovingProducts {
+        lastCountedAt
         product {
           id
-          name
           sku
-        }
-        totalQuantity
-        totalTransactions
-      }
-    }
-  }
-`;
-
-export const GET_STOCK_ALERTS = gql`
-  query GetStockAlerts(
-    $tenantId: ID!
-    $locationId: ID
-    $type: AlertType
-    $limit: Int
-    $offset: Int
-  ) {
-    stockAlerts(
-      tenantId: $tenantId
-      locationId: $locationId
-      type: $type
-      limit: $limit
-      offset: $offset
-    ) {
-      id
-      type
-      message
-      isResolved
-      product {
-        id
-        name
-        sku
-        barcode
-        minStock
-        maxStock
-      }
-      location {
-        id
-        name
-        type
-      }
-      inventory {
-        id
-        quantity
-        reservedQuantity
-      }
-      tenant {
-        id
-        name
-      }
-      createdAt
-      resolvedAt
-    }
-  }
-`;
-
-export const RESOLVE_STOCK_ALERT = gql`
-  mutation ResolveStockAlert($id: ID!, $tenantId: ID!) {
-    resolveStockAlert(id: $id, tenantId: $tenantId) {
-      id
-      isResolved
-      resolvedAt
-    }
-  }
-`;
-
-// Barcode Scanning (for web if needed)
-export const SCAN_BARCODE = gql`
-  mutation ScanBarcode($barcode: String!, $tenantId: ID!) {
-    scanBarcode(barcode: $barcode, tenantId: $tenantId) {
-      product {
-        id
-        name
-        sku
-        barcode
-        price
-        cost
-        category {
-          id
           name
+          category
         }
-        brand {
-          id
-          name
-        }
-      }
-      inventory {
-        id
-        quantity
-        reservedQuantity
         location {
           id
           name
           type
         }
       }
+      pagination {
+        page
+        limit
+        total
+        totalPages
+      }
     }
   }
 `;
 
-// Subscriptions for real-time updates
-export const INVENTORY_UPDATED_SUBSCRIPTION = gql`
-  subscription InventoryUpdated($tenantId: ID!, $locationId: ID) {
-    inventoryUpdated(tenantId: $tenantId, locationId: $locationId) {
-      id
-      quantity
-      reservedQuantity
-      product {
-        id
-        name
-        sku
-        barcode
+// Dashboard Metrics Query
+export const GET_DASHBOARD_METRICS = gql`
+  query GetDashboardMetrics {
+    dashboardMetrics {
+      totalTenants
+      activeTenants
+      totalUsers
+      totalProducts
+      totalLocations
+      systemHealth {
+        status
+        uptime
+        responseTime
+        errorRate
       }
-      location {
-        id
-        name
-        type
+      usage {
+        storage {
+          used
+          total
+          percentage
+        }
+        apiCalls {
+          count
+          limit
+          percentage
+        }
       }
-      tenant {
-        id
-        name
-      }
-      updatedAt
     }
   }
 `;
 
-export const TRANSACTION_CREATED_SUBSCRIPTION = gql`
-  subscription TransactionCreated($tenantId: ID!, $locationId: ID) {
-    transactionCreated(tenantId: $tenantId, locationId: $locationId) {
-      id
-      type
-      quantity
-      product {
+// Audit Logs Query
+export const GET_AUDIT_LOGS = gql`
+  query GetAuditLogs($filters: AuditLogFilters, $pagination: PaginationInput) {
+    auditLogs(filters: $filters, pagination: $pagination) {
+      data {
         id
-        name
-        sku
-        barcode
+        action
+        resource
+        resourceId
+        userId
+        userEmail
+        changes
+        metadata
+        ipAddress
+        userAgent
+        timestamp
+        tenantId
       }
-      location {
-        id
-        name
-        type
+      pagination {
+        page
+        limit
+        total
+        totalPages
       }
-      user {
-        id
-        firstName
-        lastName
-      }
-      tenant {
-        id
-        name
-      }
-      createdAt
     }
   }
 `;
 
-export const STOCK_ALERT_CREATED_SUBSCRIPTION = gql`
-  subscription StockAlertCreated($tenantId: ID!, $locationId: ID) {
-    stockAlertCreated(tenantId: $tenantId, locationId: $locationId) {
-      id
-      type
-      message
-      product {
-        id
-        name
-        sku
-        barcode
-      }
-      location {
+// Report Queries and Mutations
+export const GET_REPORTS = gql`
+  query GetReports($filters: ReportFilters, $pagination: PaginationInput) {
+    reports(filters: $filters, pagination: $pagination) {
+      data {
         id
         name
         type
+        description
+        createdBy
+        createdAt
+        updatedAt
+        schedule {
+          frequency
+          isActive
+          nextRunAt
+        }
       }
-      inventory {
-        id
-        quantity
-        reservedQuantity
+      pagination {
+        page
+        limit
+        total
+        totalPages
       }
-      tenant {
-        id
-        name
-      }
-      createdAt
+    }
+  }
+`;
+
+export const GENERATE_REPORT = gql`
+  mutation GenerateReport($input: GenerateReportInput!) {
+    generateReport(input: $input) {
+      id
+      status
+      downloadUrl
+      generatedAt
+    }
+  }
+`;
+
+// Fragment for common user fields
+export const USER_FRAGMENT = gql`
+  fragment UserFragment on User {
+    id
+    email
+    name
+    role
+    tenantId
+    isActive
+    avatar
+    lastLoginAt
+    createdAt
+    updatedAt
+  }
+`;
+
+// Fragment for common tenant fields
+export const TENANT_FRAGMENT = gql`
+  fragment TenantFragment on Tenant {
+    id
+    name
+    slug
+    status
+    plan
+    domain
+    logo
+    contactEmail
+    createdAt
+    updatedAt
+    usage {
+      users
+      storage
+      apiCalls
+      locations
+      products
+    }
+    limits {
+      maxUsers
+      maxStorage
+      maxApiCalls
+      maxLocations
+      maxProducts
     }
   }
 `;

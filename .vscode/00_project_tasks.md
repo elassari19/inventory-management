@@ -35,7 +35,7 @@
 
 ## Integration Tasks
 
-- [ ] Connect mobile app with backend services
+- [x] Connect mobile app with backend services
 - [ ] Integrate web dashboard with backend APIs
 - [ ] Set up notification system across platforms
 - [ ] Implement subscription billing system
