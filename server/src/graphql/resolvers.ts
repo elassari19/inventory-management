@@ -9,6 +9,7 @@ import {
   ForbiddenError,
 } from 'apollo-server-express';
 import { resolvers as barcodeScanResolvers } from './barcodeScan';
+import { resolvers as notificationResolvers } from './notification';
 
 // Helper to get/create tenant cache instance
 const getTenantCacheInstance = (tenantId: string) => {
@@ -565,6 +566,9 @@ export const resolvers = {
         groupBy
       );
     },
+
+    // Notification queries
+    ...notificationResolvers.Query,
   },
 
   // Type resolvers
@@ -1128,5 +1132,8 @@ export const resolvers = {
 
       return result.transaction;
     },
+
+    // Notification mutations
+    ...notificationResolvers.Mutation,
   },
 };

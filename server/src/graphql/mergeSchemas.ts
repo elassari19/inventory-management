@@ -1,6 +1,7 @@
 import { gql } from 'apollo-server-express';
 import { typeDefs as coreTypeDefs } from './schema';
 import { typeDefs as barcodeScanTypeDefs } from './barcodeScan';
+import { typeDefs as notificationTypeDefs } from './notification';
 
 // Merge the base schema with extensions
 export const mergeTypeDefs = () => {
@@ -14,6 +15,9 @@ export const mergeTypeDefs = () => {
 
     # Barcode scanning extensions
     ${barcodeScanTypeDefs}
+
+    # Notification system extensions
+    ${notificationTypeDefs}
   `;
 
   return baseSchema;
