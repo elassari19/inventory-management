@@ -38,8 +38,8 @@
 - [x] Connect mobile app with backend services
 - [x] Integrate web dashboard with backend APIs
 - [x] Set up notification system across platforms
-- [ ] Implement subscription billing system
-- [ ] Create external API integrations (e-commerce platforms, POS systems)
+- [x] Implement subscription billing system
+- [-] Create external API integrations (e-commerce platforms, POS systems)
 
 ## Testing & QA
 

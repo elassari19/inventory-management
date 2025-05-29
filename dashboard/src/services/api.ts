@@ -56,6 +56,19 @@ import {
   STOCK_ALERT_CREATED_SUBSCRIPTION,
 } from './graphql/queries';
 
+// Import billing queries and mutations
+import {
+  GET_BILLING_INFO,
+  GET_SUBSCRIPTION_PLANS,
+  CREATE_SUBSCRIPTION,
+  CHANGE_SUBSCRIPTION_PLAN,
+  CANCEL_SUBSCRIPTION,
+  RESUME_SUBSCRIPTION,
+  ADD_PAYMENT_METHOD,
+  SET_DEFAULT_PAYMENT_METHOD,
+  REMOVE_PAYMENT_METHOD,
+} from './graphql/billing';
+
 // Custom hook for handling common query operations with tenant context
 export function useAppQuery<T = any>(query: any, options: any = {}) {
   const { toast } = useToast();
@@ -385,5 +398,67 @@ export function useTransactionUpdates(locationId?: string) {
 export function useStockAlertUpdates(locationId?: string) {
   return useAppSubscription(STOCK_ALERT_CREATED_SUBSCRIPTION, {
     variables: { locationId },
+  });
+}
+
+// Billing hooks
+export function useBillingInfo() {
+  return useAppQuery(GET_BILLING_INFO, {
+    fetchPolicy: 'cache-and-network',
+  });
+}
+
+export function useSubscriptionPlans() {
+  return useAppQuery(GET_SUBSCRIPTION_PLANS, {
+    fetchPolicy: 'cache-first',
+  });
+}
+
+export function useCreateSubscription() {
+  return useAppMutation(CREATE_SUBSCRIPTION, {
+    successMessage: 'Subscription created successfully',
+    refetchQueries: [{ query: GET_BILLING_INFO }],
+  });
+}
+
+export function useChangeSubscriptionPlan() {
+  return useAppMutation(CHANGE_SUBSCRIPTION_PLAN, {
+    successMessage: 'Subscription plan changed successfully',
+    refetchQueries: [{ query: GET_BILLING_INFO }],
+  });
+}
+
+export function useAddPaymentMethod() {
+  return useAppMutation(ADD_PAYMENT_METHOD, {
+    successMessage: 'Payment method added successfully',
+    refetchQueries: [{ query: GET_BILLING_INFO }],
+  });
+}
+
+export function useSetDefaultPaymentMethod() {
+  return useAppMutation(SET_DEFAULT_PAYMENT_METHOD, {
+    successMessage: 'Default payment method updated successfully',
+    refetchQueries: [{ query: GET_BILLING_INFO }],
+  });
+}
+
+export function useRemovePaymentMethod() {
+  return useAppMutation(REMOVE_PAYMENT_METHOD, {
+    successMessage: 'Payment method removed successfully',
+    refetchQueries: [{ query: GET_BILLING_INFO }],
+  });
+}
+
+export function useCancelSubscription() {
+  return useAppMutation(CANCEL_SUBSCRIPTION, {
+    successMessage: 'Subscription cancelled successfully',
+    refetchQueries: [{ query: GET_BILLING_INFO }],
+  });
+}
+
+export function useResumeSubscription() {
+  return useAppMutation(RESUME_SUBSCRIPTION, {
+    successMessage: 'Subscription resumed successfully',
+    refetchQueries: [{ query: GET_BILLING_INFO }],
   });
 }

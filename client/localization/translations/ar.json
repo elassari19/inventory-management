@@ -4,6 +4,7 @@
     "explore": "استكشاف",
     "home": "الصفحة الرئيسية",
     "settings": "الإعدادات",
+    "billing": "الفواتير",
     "profile": "الملف الشخصي",
     "search": "بحث",
     "loading": "جار التحميل",
@@ -35,5 +36,27 @@
     "deleteItem": "حذف عنصر",
     "noItems": "لا توجد عناصر",
     "search": "بحث عن عنصر"
+  },
+  "billing": {
+    "title": "الفواتير والاشتراك",
+    "currentPlan": "الخطة الحالية",
+    "changePlan": "تغيير الخطة",
+    "paymentMethods": "طرق الدفع",
+    "usage": "الاستخدام",
+    "invoices": "الفواتير",
+    "subscription": "الاشتراك",
+    "status": "الحالة",
+    "nextBilling": "الفوترة التالية",
+    "amount": "المبلغ",
+    "monthly": "شهري",
+    "annual": "سنوي",
+    "popular": "الأكثر شعبية",
+    "unlimited": "غير محدود",
+    "features": "الميزات",
+    "limits": "الحدود",
+    "active": "نشط",
+    "trial": "تجريبي",
+    "pastDue": "متأخر",
+    "canceled": "ملغي"
   }
 }

@@ -8,6 +8,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { TenantsPage } from './pages/TenantsPage';
 import { UsersPage } from './pages/UsersPage';
 import { InventoryPage } from './pages/InventoryPage';
+import { BillingPage } from './pages/BillingPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
@@ -18,7 +19,7 @@ function App() {
   return (
     <ErrorBoundary>
       <ToastProvider>
-        {isAuthenticated ? (
+        {!isAuthenticated ? (
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
@@ -31,6 +32,7 @@ function App() {
               <Route path="/tenants" element={<TenantsPage />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/inventory" element={<InventoryPage />} />
+              <Route path="/billing" element={<BillingPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/audit-logs" element={<AuditLogsPage />} />

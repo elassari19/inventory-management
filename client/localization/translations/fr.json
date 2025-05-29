@@ -4,6 +4,7 @@
     "explore": "Explorer",
     "home": "Accueil",
     "settings": "Paramètres",
+    "billing": "Facturation",
     "profile": "Profil",
     "search": "Rechercher",
     "loading": "Chargement...",
@@ -35,5 +36,27 @@
     "deleteItem": "Supprimer un article",
     "noItems": "Aucun article trouvé",
     "search": "Rechercher dans l'inventaire"
+  },
+  "billing": {
+    "title": "Facturation et Abonnement",
+    "currentPlan": "Plan actuel",
+    "changePlan": "Changer de plan",
+    "paymentMethods": "Méthodes de paiement",
+    "usage": "Utilisation",
+    "invoices": "Factures",
+    "subscription": "Abonnement",
+    "status": "Statut",
+    "nextBilling": "Prochaine facturation",
+    "amount": "Montant",
+    "monthly": "Mensuel",
+    "annual": "Annuel",
+    "popular": "Populaire",
+    "unlimited": "Illimité",
+    "features": "Fonctionnalités",
+    "limits": "Limites",
+    "active": "Actif",
+    "trial": "Essai",
+    "pastDue": "En retard",
+    "canceled": "Annulé"
   }
 }

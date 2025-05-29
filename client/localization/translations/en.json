@@ -4,6 +4,7 @@
     "explore": "Explore",
     "home": "Home",
     "settings": "Settings",
+    "billing": "Billing",
     "profile": "Profile",
     "search": "Search",
     "loading": "Loading...",
@@ -35,5 +36,27 @@
     "deleteItem": "Delete Item",
     "noItems": "No items found",
     "search": "Search inventory"
+  },
+  "billing": {
+    "title": "Billing & Subscription",
+    "currentPlan": "Current Plan",
+    "changePlan": "Change Plan",
+    "paymentMethods": "Payment Methods",
+    "usage": "Usage",
+    "invoices": "Invoices",
+    "subscription": "Subscription",
+    "status": "Status",
+    "nextBilling": "Next Billing",
+    "amount": "Amount",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "popular": "Most Popular",
+    "unlimited": "Unlimited",
+    "features": "Features",
+    "limits": "Limits",
+    "active": "Active",
+    "trial": "Trial",
+    "pastDue": "Past Due",
+    "canceled": "Canceled"
   }
 }

@@ -43,3 +43,12 @@ Ventory implements a comprehensive tenant isolation strategy to ensure data secu
 2. Set up environment variables
 3. Run database migrations
 4. Start the development server
+
+<!--
+sudo lsof -i :5432
+sudo kill -9 143
+sudo rm /tmp/.s.PGSQL.5432.lock
+sudo rm /tmp/.s.PGSQL.5432
+brew services start postgresql@15
+brew services list
+ -->
